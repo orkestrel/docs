@@ -1,0 +1,65 @@
+{
+  "name": "@orkestrel/docs",
+  "version": "0.1.0",
+  "description": "Unified docs generator and CLI for orkestrel packages (auto-discovery + caching)",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "orkdocs": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./eslint": {
+      "types": "./dist/eslint.d.ts",
+      "import": "./dist/eslint.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "clean": "node -e \"try{require('fs').rmSync(process.argv[1],{recursive:true,force:true})}catch(e){}\" dist",
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "check": "tsc -p tsconfig.json",
+    "format": "eslint . --fix",
+    "pretest": "npm run build",
+    "test": "vitest run",
+    "sync": "node dist/cli.js sync",
+    "sync:clean": "node dist/cli.js sync --clean",
+    "sync:hard": "node dist/cli.js sync --hard"
+  },
+  "devDependencies": {
+    "@types/node": "^24.7.2",
+    "typedoc-plugin-extras": "^4.0.1",
+    "typedoc-plugin-frontmatter": "^1.3.0",
+    "typedoc-plugin-markdown": "^4.9.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.10",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@nuxt/eslint-config": "^1.9.0",
+    "@orkestrel/llms-txt": "^1.0.1",
+    "@orkestrel/validator": "^1.1.0",
+    "eslint-plugin-jsdoc": "^61.1.2",
+    "eslint-plugin-tsdoc": "^0.4.0",
+    "typedoc": "^0.28.14"
+  },
+  "peerDependencies": {
+    "eslint": ">=9.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

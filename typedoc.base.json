@@ -1,0 +1,30 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/tests/**"
+  ],
+  "entryPoints": [
+    "src/index.ts"
+  ],
+  "out": "docs/api",
+  "plugin": [
+    "typedoc-plugin-markdown",
+    "typedoc-plugin-frontmatter",
+    "typedoc-plugin-extras"
+  ],
+  "githubPages": false,
+  "hideGenerator": true,
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "excludeExternals": false,
+  "includeVersion": false,
+  "categorizeByGroup": true,
+  "theme": "default",
+  "readme": "none",
+  "gitRevision": "main"
+}

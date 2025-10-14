@@ -1,0 +1,12 @@
+node_modules
+dist
+.DS_Store
+.tmp
+.temp
+packages/*/api
+packages/*/llms.txt
+packages/*/llms-full.txt
+packages/cache.json
+tests/**/*.js
+tests/**/*.d.ts
+.idea

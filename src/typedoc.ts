@@ -1,19 +1,6 @@
-import path from "node:path";
-import { Application, TSConfigReader, TypeDocReader } from "typedoc";
-import { fileExists } from "./helpers";
-
-/**
- * Options for API doc generation.
- */
-export interface GenerateApiOptions {
-  readonly pkgDir: string;
-  readonly outDir: string;
-  readonly baseConfigPath?: string;
-  readonly tsconfig?: string;
-  readonly entryPoints?: readonly string[];
-  readonly entryPointStrategy?: "resolve" | "expand" | "packages";
-  readonly dryRun?: boolean;
-}
+import path from 'node:path'
+import { Application } from 'typedoc'
+import type { GenerateApiOptions } from './types'
 
 /**
  * Generate TypeDoc API documentation for a package using the central base config.
@@ -30,38 +17,38 @@ export interface GenerateApiOptions {
  * ```
  */
 export async function generateApiDocs(opts: GenerateApiOptions): Promise<void> {
-  const {
-    pkgDir,
-    outDir,
-    baseConfigPath,
-    tsconfig,
-    entryPoints = [],
-    entryPointStrategy = "resolve",
-    dryRun,
-  } = opts;
+	const {
+		pkgDir,
+		outDir,
+		baseConfigPath,
+		tsconfig,
+		entryPoints = [],
+		entryPointStrategy = 'resolve',
+		dryRun,
+	} = opts
 
-  if (dryRun) {
-    const relBase = baseConfigPath ? path.relative(process.cwd(), baseConfigPath) : "(defaults)";
-    const relEntries = entryPoints.length ? ` entryPoints=${entryPoints.map((e) => path.relative(pkgDir, e)).join(",")}` : "";
-    // eslint-disable-next-line no-console
-    console.log(`[dry-run] TypeDoc for ${pkgDir} -> ${outDir} (base: ${relBase})${relEntries} strategy=${entryPointStrategy}`);
-    return;
-  }
+	if (dryRun) {
+		const relBase = baseConfigPath ? path.relative(process.cwd(), baseConfigPath) : '(defaults)'
+		const relEntries = entryPoints.length ? ` entryPoints=${entryPoints.map(e => path.relative(pkgDir, e)).join(',')}` : ''
 
-  const app = await Application.bootstrap({
-    // The TypeDoc options type is broad; we pass only known keys.
-    // Casting to unknown avoids relying on TypeDoc's internal types.
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    options: baseConfigPath as unknown as string,
-    tsconfig,
-    entryPoints: entryPoints.length ? [...entryPoints] : undefined,
-    entryPointStrategy,
-  });
+		console.log(`[dry-run] TypeDoc for ${pkgDir} -> ${outDir} (base: ${relBase})${relEntries} strategy=${entryPointStrategy}`)
+		return
+	}
 
-  const project = await app.convert();
-  if (!project) throw new Error(`TypeDoc conversion failed for ${pkgDir}`);
+	const app = await Application.bootstrap({
+		// The TypeDoc options type is broad; we pass only known keys.
+		// Casting to unknown avoids relying on TypeDoc's internal types.
 
-  await app.generateDocs(project, outDir);
-  // eslint-disable-next-line no-console
-  console.log(`Generated API docs: ${outDir}`);
+		options: baseConfigPath as unknown as string,
+		tsconfig,
+		entryPoints: entryPoints.length ? [...entryPoints] : undefined,
+		entryPointStrategy,
+	})
+
+	const project = await app.convert()
+	if (!project) throw new Error(`TypeDoc conversion failed for ${pkgDir}`)
+
+	await app.generateDocs(project, outDir)
+
+	console.log(`Generated API docs: ${outDir}`)
 }

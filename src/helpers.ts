@@ -1,7 +1,8 @@
-import path from "node:path";
-import fs from "node:fs";
-import fsp from "node:fs/promises";
-import crypto from "node:crypto";
+import path from 'node:path'
+import fs from 'node:fs'
+import fsp from 'node:fs/promises'
+import crypto from 'node:crypto'
+import type { CacheFile } from './types'
 
 /**
  * Check whether a path exists.
@@ -14,7 +15,13 @@ import crypto from "node:crypto";
  * ```
  */
 export async function fileExists(p: string): Promise<boolean> {
-  try { await fsp.access(p, fs.constants.F_OK); return true; } catch { return false; }
+	try {
+		await fsp.access(p, fs.constants.F_OK)
+		return true
+	}
+	catch {
+		return false
+	}
 }
 
 /**
@@ -29,13 +36,20 @@ export async function fileExists(p: string): Promise<boolean> {
  * ```
  */
 export async function getPackageMeta(pkgDir: string): Promise<Readonly<{ name?: string }> | null> {
-  const pkgJson = path.join(pkgDir, "package.json");
-  if (!(await fileExists(pkgJson))) return null;
-  try { return JSON.parse(await fsp.readFile(pkgJson, "utf8")) as Readonly<{ name?: string }>; } catch { return null; }
+	const pkgJson = path.join(pkgDir, 'package.json')
+	if (!(await fileExists(pkgJson))) {
+		return null
+	}
+	try {
+		return JSON.parse(await fsp.readFile(pkgJson, 'utf8')) as Readonly<{ name?: string }>
+	}
+	catch {
+		return null
+	}
 }
 
 /**
- * Convert a possibly scoped name to its base segment, e.g. "@scope/core" -> "core".
+ * Convert a possibly scoped name to its base segment, e.g. "\@scope/core" -\> "core".
  *
  * @param name - Package name (scoped or unscoped)
  * @returns Base name without scope
@@ -46,8 +60,8 @@ export async function getPackageMeta(pkgDir: string): Promise<Readonly<{ name?: 
  * ```
  */
 export function toBaseName(name: string): string {
-  const parts = name.split("/");
-  return parts[parts.length - 1] ?? name;
+	const parts = name.split('/')
+	return parts[parts.length - 1] ?? name
 }
 
 /**
@@ -64,15 +78,15 @@ export function toBaseName(name: string): string {
  * ```
  */
 export function matchesFilter(
-  baseName: string,
-  dir: string,
-  patterns: readonly string[],
-  defaultWhenEmpty: boolean
+	baseName: string,
+	dir: string,
+	patterns: readonly string[],
+	defaultWhenEmpty: boolean,
 ): boolean {
-  if (!patterns?.length) return defaultWhenEmpty;
-  const dirName = path.basename(dir);
-  const nameVariants = new Set([baseName, dirName]);
-  return patterns.some((p) => nameVariants.has(p) || dir.includes(p));
+	if (!patterns?.length) return defaultWhenEmpty
+	const dirName = path.basename(dir)
+	const nameVariants = new Set([baseName, dirName])
+	return patterns.some(p => nameVariants.has(p) || dir.includes(p))
 }
 
 /**
@@ -88,13 +102,13 @@ export function matchesFilter(
  * ```
  */
 export async function walkDir(absDir: string, files: string[] = []): Promise<string[]> {
-  const entries = await fsp.readdir(absDir, { withFileTypes: true });
-  for (const e of entries) {
-    const abs = path.join(absDir, e.name);
-    if (e.isDirectory()) files = await walkDir(abs, files);
-    else if (e.isFile()) files.push(abs);
-  }
-  return files;
+	const entries = await fsp.readdir(absDir, { withFileTypes: true })
+	for (const e of entries) {
+		const abs = path.join(absDir, e.name)
+		if (e.isDirectory()) files = await walkDir(abs, files)
+		else if (e.isFile()) files.push(abs)
+	}
+	return files
 }
 
 /**
@@ -104,9 +118,9 @@ export async function walkDir(absDir: string, files: string[] = []): Promise<str
  * @param hash - Crypto hash instance
  */
 async function hashFile(absPath: string, hash: crypto.Hash): Promise<void> {
-  const data = await fsp.readFile(absPath);
-  hash.update(absPath);
-  hash.update(data);
+	const data = await fsp.readFile(absPath)
+	hash.update(absPath)
+	hash.update(data)
 }
 
 /**
@@ -116,12 +130,12 @@ async function hashFile(absPath: string, hash: crypto.Hash): Promise<void> {
  * @returns True if the file should be skipped
  */
 function shouldSkipForApi(absPath: string): boolean {
-  const rel = absPath.toLowerCase();
-  if (rel.includes(`${path.sep}node_modules${path.sep}`)) return true;
-  if (rel.includes(`${path.sep}dist${path.sep}`)) return true;
-  if (rel.includes(`${path.sep}build${path.sep}`)) return true;
-  if (rel.endsWith(".test.ts") || rel.endsWith(".spec.ts")) return true;
-  return false;
+	const rel = absPath.toLowerCase()
+	if (rel.includes(`${path.sep}node_modules${path.sep}`)) return true
+	if (rel.includes(`${path.sep}dist${path.sep}`)) return true
+	if (rel.includes(`${path.sep}build${path.sep}`)) return true
+	if (rel.endsWith('.test.ts') || rel.endsWith('.spec.ts')) return true
+	return false
 }
 
 /**
@@ -135,15 +149,15 @@ function shouldSkipForApi(absPath: string): boolean {
  * ```
  */
 export async function computeGuidesHash(pkgDir: string): Promise<string> {
-  const guidesDir = path.join(pkgDir, "guides");
-  const hash = crypto.createHash("sha256");
-  if (!fs.existsSync(guidesDir)) {
-    hash.update("no-guides");
-    return hash.digest("hex");
-  }
-  const files = (await walkDir(guidesDir)).sort();
-  for (const f of files) await hashFile(f, hash);
-  return hash.digest("hex");
+	const guidesDir = path.join(pkgDir, 'guides')
+	const hash = crypto.createHash('sha256')
+	if (!fs.existsSync(guidesDir)) {
+		hash.update('no-guides')
+		return hash.digest('hex')
+	}
+	const files = (await walkDir(guidesDir)).sort()
+	for (const f of files) await hashFile(f, hash)
+	return hash.digest('hex')
 }
 
 /**
@@ -158,34 +172,18 @@ export async function computeGuidesHash(pkgDir: string): Promise<string> {
  * ```
  */
 export async function computeApiHash(pkgDir: string, typedocBasePath: string): Promise<string> {
-  const srcDir = path.join(pkgDir, "src");
-  const h = crypto.createHash("sha256");
-  if (!fs.existsSync(srcDir)) {
-    h.update("no-src");
-  } else {
-    const files = (await walkDir(srcDir)).filter((f) => !shouldSkipForApi(f)).sort();
-    for (const f of files) await hashFile(f, h);
-  }
-  if (fs.existsSync(typedocBasePath)) await hashFile(typedocBasePath, h);
-  else h.update("no-typedoc-base");
-  return h.digest("hex");
-}
-
-/**
- * Cache entry for a single package.
- */
-export interface CacheEntry {
-  readonly guidesHash: string;
-  readonly apiHash: string;
-  readonly updatedAt?: string;
-}
-
-/**
- * Cache file structure stored at docs/packages/cache.json.
- */
-export interface CacheFile {
-  readonly version: 1;
-  readonly packages: Record<string, CacheEntry>;
+	const srcDir = path.join(pkgDir, 'src')
+	const h = crypto.createHash('sha256')
+	if (!fs.existsSync(srcDir)) {
+		h.update('no-src')
+	}
+	else {
+		const files = (await walkDir(srcDir)).filter(f => !shouldSkipForApi(f)).sort()
+		for (const f of files) await hashFile(f, h)
+	}
+	if (fs.existsSync(typedocBasePath)) await hashFile(typedocBasePath, h)
+	else h.update('no-typedoc-base')
+	return h.digest('hex')
 }
 
 /**
@@ -199,13 +197,14 @@ export interface CacheFile {
  * ```
  */
 export async function loadCache(cachePath: string): Promise<CacheFile> {
-  try {
-    const json = JSON.parse(await fsp.readFile(cachePath, "utf8")) as CacheFile;
-    if (!json.version || !json.packages) throw new Error("Invalid cache file");
-    return json;
-  } catch {
-    return { version: 1, packages: {} };
-  }
+	try {
+		const json = JSON.parse(await fsp.readFile(cachePath, 'utf8')) as CacheFile
+		if (!json.version || !json.packages) throw new Error('Invalid cache file')
+		return json
+	}
+	catch {
+		return { version: 1, packages: {} }
+	}
 }
 
 /**
@@ -220,7 +219,7 @@ export async function loadCache(cachePath: string): Promise<CacheFile> {
  * ```
  */
 export async function saveCache(cachePath: string, cache: CacheFile): Promise<void> {
-  await fsp.writeFile(cachePath, JSON.stringify(cache, null, 2), "utf8");
+	await fsp.writeFile(cachePath, JSON.stringify(cache, null, 2), 'utf8')
 }
 
 /**
@@ -235,38 +234,41 @@ export async function saveCache(cachePath: string, cache: CacheFile): Promise<vo
  * ```
  */
 export async function normalizeLlmsOutputs(
-  outDir: string,
-  files: readonly string[] = ["llms.txt", "llms-full.txt"]
+	outDir: string,
+	files: readonly string[] = ['llms.txt', 'llms-full.txt'],
 ): Promise<void> {
-  await fsp.mkdir(outDir, { recursive: true });
-  for (const name of files) {
-    const rootTarget = path.join(outDir, name);
-    if (await fileExists(rootTarget)) continue;
+	await fsp.mkdir(outDir, { recursive: true })
+	for (const name of files) {
+		const rootTarget = path.join(outDir, name)
+		if (await fileExists(rootTarget)) continue
 
-    // Search recursively for the file
-    let foundPath: string | null = null;
-    try {
-      foundPath = (await walkDir(outDir)).find((p) => path.basename(p) === name) ?? null;
-    } catch {
-      // ignore traversal errors
-    }
+		// Search recursively for the file
+		let foundPath: string | null = null
+		try {
+			foundPath = (await walkDir(outDir)).find(p => path.basename(p) === name) ?? null
+		}
+		catch {
+			// ignore traversal errors
+		}
 
-    if (!foundPath) {
-      // Missing output is not fatal; the generator may have been configured differently
-      // Consumers can decide to enforce presence via link validation (hard mode) in CI.
-      continue;
-    }
+		if (!foundPath) {
+			// Missing output is not fatal; the generator may have been configured differently
+			// Consumers can decide to enforce presence via link validation (hard mode) in CI.
+			continue
+		}
 
-    // Move to root; fallback to copy+unlink if rename fails
-    try {
-      await fsp.rename(foundPath, rootTarget);
-    } catch {
-      try {
-        await fsp.copyFile(foundPath, rootTarget);
-        await fsp.unlink(foundPath);
-      } catch {
-        // If both rename and copy fail, leave as-is to avoid data loss.
-      }
-    }
-  }
+		// Move to root; fallback to copy+unlink if rename fails
+		try {
+			await fsp.rename(foundPath, rootTarget)
+		}
+		catch {
+			try {
+				await fsp.copyFile(foundPath, rootTarget)
+				await fsp.unlink(foundPath)
+			}
+			catch {
+				// If both rename and copy fail, leave as-is to avoid data loss.
+			}
+		}
+	}
 }

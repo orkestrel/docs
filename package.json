@@ -1,0 +1,41 @@
+{
+  "name": "@orkestrel/docs",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Unified docs generator and CLI for orkestrel packages (auto-discovery + caching)",
+  "bin": {
+    "orkdocs": "dist/cli.js"
+  },
+  "exports": {
+    "./eslint": {
+      "types": "./dist/config/eslint.d.ts",
+      "default": "./dist/config/eslint.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json",
+    "format": "eslint . --fix",
+    "pretest": "npm run build",
+    "test": "vitest run",
+    "sync": "node dist/cli.js sync",
+    "sync:clean": "node dist/cli.js sync --clean",
+    "sync:hard": "node dist/cli.js sync --hard"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.37.0",
+    "@nuxt/eslint-config": "^1.9.0",
+    "@typescript-eslint/eslint-plugin": "^8.11.0",
+    "@typescript-eslint/parser": "^8.11.0",
+    "@orkestrel/llms-txt": "file:../llms-txt",
+    "eslint": "^9.37.0",
+    "eslint-plugin-jsdoc": "^61.1.2",
+    "eslint-plugin-tsdoc": "^0.4.0",
+    "typedoc": "^0.25.13",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

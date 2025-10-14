@@ -25,13 +25,14 @@
   "devDependencies": {
     "@eslint/js": "^9.37.0",
     "@nuxt/eslint-config": "^1.9.0",
+    "@orkestrel/llms-txt": "file:../llms-txt",
+    "@types/node": "^24.7.2",
     "@typescript-eslint/eslint-plugin": "^8.11.0",
     "@typescript-eslint/parser": "^8.11.0",
-    "@orkestrel/llms-txt": "file:../llms-txt",
     "eslint": "^9.37.0",
     "eslint-plugin-jsdoc": "^61.1.2",
     "eslint-plugin-tsdoc": "^0.4.0",
-    "typedoc": "^0.25.13",
+    "typedoc": "^0.26.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   },

@@ -48,35 +48,17 @@ export async function generateApiDocs(opts: GenerateApiOptions): Promise<void> {
     return;
   }
 
-  const app = new Application();
-  app.options.addReader(new TypeDocReader());
-  app.options.addReader(new TSConfigReader());
+  const app = await Application.bootstrap({
+    // The TypeDoc options type is broad; we pass only known keys.
+    // Casting to unknown avoids relying on TypeDoc's internal types.
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    options: baseConfigPath as unknown as string,
+    tsconfig,
+    entryPoints: entryPoints.length ? [...entryPoints] : undefined,
+    entryPointStrategy,
+  });
 
-  // Bootstrap with central config, then override dynamic options
-  if (baseConfigPath && (await fileExists(baseConfigPath))) {
-    app.bootstrap({
-      // The TypeDoc options type is broad; we pass only known keys.
-      // Casting to unknown avoids relying on TypeDoc's internal types.
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      options: baseConfigPath as unknown as string,
-      tsconfig,
-      entryPoints: entryPoints.length ? [...entryPoints] : undefined,
-      entryPointStrategy,
-    });
-  } else {
-    app.bootstrap({
-      entryPoints: entryPoints.length ? [...entryPoints] : undefined,
-      entryPointStrategy,
-      tsconfig,
-      excludePrivate: true,
-      excludeInternal: true,
-      categorizeByGroup: true,
-      readme: "none",
-      gitRevision: "main",
-    } as Partial<Record<string, unknown>>);
-  }
-
-  const project = app.convert();
+  const project = await app.convert();
   if (!project) throw new Error(`TypeDoc conversion failed for ${pkgDir}`);
 
   await app.generateDocs(project, outDir);

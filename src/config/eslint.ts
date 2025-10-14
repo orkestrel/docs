@@ -25,8 +25,8 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
   const stylisticIndent = opts.stylisticIndent ?? "tab";
   const typesFile = opts.allowTypesFile ?? "src/types.ts";
 
-  let createConfigForNuxt: (o: unknown) => Promise<unknown[]>;
-  let jsdoc: { configs?: { examples?: unknown[] } };
+  let createConfigForNuxt: unknown;
+  let jsdoc: unknown;
   let tsdoc: unknown;
 
   try {
@@ -37,8 +37,7 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
   }
   try {
     // eslint-disable-next-line import/no-extraneous-dependencies
-    const m = await import("eslint-plugin-jsdoc");
-    jsdoc = (m as unknown as { default?: typeof m; configs?: { examples?: unknown[] } }).default ?? (m as unknown as { configs?: { examples?: unknown[] } });
+    jsdoc = await import("eslint-plugin-jsdoc");
   } catch {
     throw new Error("eslint-plugin-jsdoc is required in the consuming package's devDependencies.");
   }
@@ -49,9 +48,11 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
     throw new Error("eslint-plugin-tsdoc is required in the consuming package's devDependencies.");
   }
 
-  const base = (await createConfigForNuxt({
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const configFn = createConfigForNuxt as (o: unknown) => Promise<unknown[]>;
+  const base = await configFn({
     features: { stylistic: { indent: stylisticIndent } },
-  } as const)) as unknown[];
+  } as const);
 
   const orkTs = {
     name: "orkestrel/typescript",
@@ -87,7 +88,7 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
   const tsdocConfig = {
     name: "orkestrel/tsdoc",
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    plugins: { jsdoc: jsdoc as unknown, tsdoc },
+    plugins: { jsdoc, tsdoc },
     settings: {
       jsdoc: { mode: "typescript", tagNamePreference: { returns: "returns" } },
     },
@@ -126,11 +127,14 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
     rules: { "no-restricted-syntax": "off" },
   };
 
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const jsdocExamples = (jsdoc as { configs?: { examples?: unknown[] } }).configs?.examples ?? [];
+
   return [
     { name: "orkestrel/ignores", ignores: ["guides/**", "packages/**/api/**"] },
     ...base,
     orkTs,
-    ...(jsdoc.configs?.examples ?? []),
+    ...jsdocExamples,
     tsdocConfig,
     restrictTypesOutsideTypes,
     allowTypesInTypesFile,

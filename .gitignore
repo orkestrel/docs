@@ -9,3 +9,4 @@ packages/*/llms-full.txt
 packages/cache.json
 tests/**/*.js
 tests/**/*.d.ts
+.idea

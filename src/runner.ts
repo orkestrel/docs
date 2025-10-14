@@ -1,9 +1,9 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
-import { generateApiDocs } from './typedoc'
-import { copyGuides } from './guides'
-import { generateLlmsOutputs } from './llms'
+import { generateApiDocs } from './typedoc.js'
+import { copyGuides } from './guides.js'
+import { generateLlmsOutputs } from './llms.js'
 import {
 	fileExists,
 	getPackageMeta,
@@ -13,8 +13,8 @@ import {
 	computeGuidesHash,
 	loadCache,
 	saveCache,
-} from './helpers'
-import type { CacheFile, SyncOptions } from './types'
+} from './helpers.js'
+import type { CacheFile, SyncOptions } from './types.js'
 
 /**
  * Run the docs synchronization process:
@@ -134,32 +134,42 @@ export async function runSync(options: SyncOptions): Promise<void> {
 
 		// API via TypeDoc
 		if (apiChanged) {
-			// Determine entry points: common defaults -> expand src
+			// Determine entry points: allow explicit overrides; else infer defaults then fallback to expand
 			let entryPoints: string[] = []
-			let entryPointStrategy: 'resolve' | 'expand' = 'resolve'
-			const defaults = ['src/index.ts', 'src/main.ts', 'index.ts', 'lib/index.ts']
-			const found: string[] = []
-			for (const rel of defaults) {
-				const abs = path.join(pkgDir, rel)
-				if (await fileExists(abs)) found.push(abs)
-			}
-			if (found.length) {
-				entryPoints = found
+			let entryPointStrategy: 'resolve' | 'expand' | 'packages' = 'resolve'
+			if (options.typedoc?.entryPoints?.length) {
+				entryPoints = [...options.typedoc.entryPoints]
+				entryPointStrategy = options.typedoc.entryPointStrategy ?? 'resolve'
 			}
 			else {
-				entryPoints = [path.join(pkgDir, 'src')]
-				entryPointStrategy = 'expand'
+				const defaults = ['src/index.ts', 'src/main.ts', 'index.ts', 'lib/index.ts']
+				const found: string[] = []
+				for (const rel of defaults) {
+					const abs = path.join(pkgDir, rel)
+					if (await fileExists(abs)) found.push(abs)
+				}
+				if (found.length) entryPoints = found
+				else {
+					entryPoints = [path.join(pkgDir, 'src')]
+					entryPointStrategy = 'expand'
+				}
+				if (options.typedoc?.entryPointStrategy) entryPointStrategy = options.typedoc.entryPointStrategy
 			}
 
-			const tsconfigFile = path.join(pkgDir, 'tsconfig.json')
+			const discoveredTsconfig = path.join(pkgDir, 'tsconfig.json')
+			const tsconfigFile = options.typedoc?.tsconfig ?? ((await fileExists(discoveredTsconfig)) ? discoveredTsconfig : undefined)
+
 			await generateApiDocs({
 				pkgDir,
 				outDir: outApi,
 				baseConfigPath: typedocBasePath,
-				tsconfig: (await fileExists(tsconfigFile)) ? tsconfigFile : undefined,
+				tsconfig: tsconfigFile,
 				entryPoints,
 				entryPointStrategy,
 				dryRun: options.dryRun,
+				autoInstallDeps: options.typedoc?.autoInstallDeps,
+				packageManager: options.typedoc?.packageManager,
+				extraApplicationOptions: options.typedoc?.extraApplicationOptions,
 			})
 		}
 		else {
@@ -168,7 +178,8 @@ export async function runSync(options: SyncOptions): Promise<void> {
 
 		// LLMs when any changed
 		if (options.generateLlms && (guidesChanged || apiChanged)) {
-			await generateLlmsOutputs({ pkgDir, outDir: outRoot, dryRun: options.dryRun, hard: options.hard })
+			const llmsCfg = options.llms ?? {}
+			await generateLlmsOutputs({ pkgDir, outDir: outRoot, dryRun: options.dryRun, hard: options.hard, ...llmsCfg })
 		}
 		else if (options.generateLlms) {
 			console.log(`LLMs unchanged for ${baseName} (skip)`)

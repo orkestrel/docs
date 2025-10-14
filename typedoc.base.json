@@ -5,14 +5,26 @@
     "**/*.spec.ts",
     "**/node_modules/**",
     "**/dist/**",
-    "**/build/**"
+    "**/build/**",
+    "**/tests/**"
   ],
-  "excludeInternal": true,
+  "entryPoints": [
+    "src/index.ts"
+  ],
+  "out": "docs/api",
+  "plugin": [
+    "typedoc-plugin-markdown",
+    "typedoc-plugin-frontmatter",
+    "typedoc-plugin-extras"
+  ],
+  "githubPages": false,
+  "hideGenerator": true,
   "excludePrivate": true,
+  "excludeInternal": true,
   "excludeExternals": false,
+  "includeVersion": false,
   "categorizeByGroup": true,
+  "theme": "default",
   "readme": "none",
-  "includeVersion": true,
-  "gitRevision": "main",
-  "plugin": []
+  "gitRevision": "main"
 }

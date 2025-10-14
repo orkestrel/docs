@@ -1,11 +1,16 @@
-import type { OrkEslintOptions } from '../types'
+import type { OrkEslintOptions } from './types.js'
+import { createConfigForNuxt } from '@nuxt/eslint-config/flat'
+import jsdoc from 'eslint-plugin-jsdoc'
+import tsdoc from 'eslint-plugin-tsdoc'
 
 /**
  * Orkestrel ESLint flat config helper (Nuxt + TS + TSDoc/JSDoc + project rules).
  *
- * Usage:
- *   import \{ createOrkestrelConfig \} from '\@orkestrel/docs/eslint'
- *   export default await createOrkestrelConfig(\{ stylisticIndent: 'tab', allowTypesFile: 'src/types.ts' \})
+ * @example
+ * ```ts
+ * import { createOrkestrelConfig } from '\@orkestrel/docs/eslint'
+ * export default await createOrkestrelConfig({ stylisticIndent: 'tab', allowTypesFile: 'src/types.ts' })
+ * ```
  */
 
 /**
@@ -23,33 +28,21 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
 	const stylisticIndent = opts.stylisticIndent ?? 'tab'
 	const typesFile = opts.allowTypesFile ?? 'src/types.ts'
 
-	let createConfigForNuxt: unknown
-	let jsdoc: unknown
-	let tsdoc: unknown
-
-	try {
-		({ createConfigForNuxt } = await import('@nuxt/eslint-config/flat'))
-	}
-	catch {
-		throw new Error('@nuxt/eslint-config is required in the consuming package\'s devDependencies.')
-	}
-	try {
-		jsdoc = await import('eslint-plugin-jsdoc')
-	}
-	catch {
-		throw new Error('eslint-plugin-jsdoc is required in the consuming package\'s devDependencies.')
-	}
-	try {
-		tsdoc = (await import('eslint-plugin-tsdoc')).default ?? (await import('eslint-plugin-tsdoc'))
-	}
-	catch {
-		throw new Error('eslint-plugin-tsdoc is required in the consuming package\'s devDependencies.')
-	}
-
-	const configFn = createConfigForNuxt as (o: unknown) => Promise<unknown[]>
-	const base = await configFn({
-		features: { stylistic: { indent: stylisticIndent } },
-	} as const)
+	// Merge user Nuxt flat config options while enforcing stylistic indent override.
+	const stylisticSource = (opts.nuxt?.features?.stylistic && typeof opts.nuxt.features.stylistic === 'object')
+		? opts.nuxt.features.stylistic
+		: {}
+	const nuxtInput: Parameters<typeof createConfigForNuxt>[0] = {
+		...(opts.nuxt ?? {}),
+		features: {
+			...(opts.nuxt?.features ?? {}),
+			stylistic: {
+				...stylisticSource,
+				indent: stylisticIndent,
+			},
+		},
+	} as const
+	const base = await createConfigForNuxt(nuxtInput)
 
 	const orkTs = {
 		name: 'orkestrel/typescript',
@@ -58,6 +51,8 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
 			'@typescript-eslint/no-explicit-any': 'error',
 			'@typescript-eslint/no-non-null-assertion': 'error',
 			'@typescript-eslint/ban-ts-comment': ['error', { 'ts-ignore': true, 'ts-expect-error': 'allow-with-description' }],
+			// User rule extensions
+			...(opts.extendRules ?? {}),
 		},
 	}
 
@@ -82,9 +77,11 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
 		'ExportDefaultDeclaration > ClassDeclaration > ClassBody > MethodDefinition[kind="set"][accessibility!=private][accessibility!=protected]',
 	]
 
+	const jsdocExamples = (jsdoc as unknown as { configs?: { examples?: unknown[] } }).configs?.examples ?? []
+
+	// Base jsdoc + tsdoc rules, extended by user-provided overrides.
 	const tsdocConfig = {
 		name: 'orkestrel/tsdoc',
-
 		plugins: { jsdoc, tsdoc },
 		settings: {
 			jsdoc: { mode: 'typescript', tagNamePreference: { returns: 'returns' } },
@@ -103,6 +100,9 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
 			'jsdoc/require-returns': ['error', { contexts: [...exportedFns, ...exportedMethods, ...exportedGetters] }],
 			'jsdoc/require-returns-description': ['error', { contexts: [...exportedFns, ...exportedMethods, ...exportedGetters] }],
 			'jsdoc/require-example': ['error', { contexts: [...exportedFns, ...exportedMethods, ...exportedClasses] }],
+			// User rule extensions
+			...(opts.extendJsdocRules ?? {}),
+			...(opts.extendTsdocRules ?? {}),
 		},
 	}
 
@@ -124,8 +124,6 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
 		rules: { 'no-restricted-syntax': 'off' },
 	}
 
-	const jsdocExamples = (jsdoc as { configs?: { examples?: unknown[] } }).configs?.examples ?? []
-
 	return [
 		{ name: 'orkestrel/ignores', ignores: ['guides/**', 'packages/**/api/**'] },
 		...base,
@@ -134,6 +132,7 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
 		tsdocConfig,
 		restrictTypesOutsideTypes,
 		allowTypesInTypesFile,
+		...(opts.additionalConfigs ?? []),
 	]
 }
 

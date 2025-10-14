@@ -1,7 +1,7 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
-import { fileExists } from './helpers'
-import type { CopyGuidesOptions } from './types'
+import { fileExists } from './helpers.js'
+import type { CopyGuidesOptions } from './types.js'
 
 /**
  * Copy a package's guides folder into the docs/packages/<pkg>/guides location.

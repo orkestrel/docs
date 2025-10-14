@@ -11,10 +11,10 @@ Quick workflow (how to work)
 1) Edit source in `src/`
 2) Mirror tests in `tests/` (one test file per source file)
 3) Run locally:
-   - `pnpm run check` — typecheck everything
-   - `pnpm test` — run unit tests with Vitest
-   - `pnpm run build` — build CJS and types
-   - `pnpm run format` — ESLint autofix
+   - `npm run check` — typecheck everything
+   - `npm test` — run unit tests with Vitest
+   - `npm run build` — build CJS and types
+   - `npm run format` — ESLint autofix
 
 Typing ethos (strict, helpful, honest)
 - No `any`. No non‑null assertions (`!`). Avoid unsafe casts; prefer narrowing

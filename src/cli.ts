@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import { parseArgs } from 'node:util'
-import { runSync } from './runner'
+import { runSync } from './runner.js'
+import type { ValidateProgress } from '@orkestrel/llms-txt'
 
 /**
  * Print CLI usage.
@@ -25,6 +26,8 @@ Options:
   --hard               Hard docs run: include link validation in LLMs
   --no-llms            Disable LLMs outputs
   --dry-run            Print actions without making changes
+  --typedoc-auto-install[=true|false]  Auto-install package dependencies if missing (default: true)
+  --typedoc-pm <npm|pnpm|yarn>         Preferred package manager when auto-installing
   --help, -h           Show help`)
 }
 
@@ -38,6 +41,8 @@ Options:
 			'hard': { type: 'boolean' },
 			'no-llms': { type: 'boolean' },
 			'dry-run': { type: 'boolean' },
+			'typedoc-auto-install': { type: 'boolean' },
+			'typedoc-pm': { type: 'string' },
 			'help': { type: 'boolean', short: 'h' },
 		},
 	})
@@ -55,15 +60,31 @@ Options:
 	}
 
 	try {
+		let wroteProgress = false
+		const progressEnabled = Boolean(values.hard) && !values['no-llms']
+		const onValidateProgress = progressEnabled
+			? (e: ValidateProgress) => {
+					const line = `Validating links: ${e.validated}/${e.total} (broken ${e.broken})`
+					process.stdout.write(`\r${line}`)
+					wroteProgress = true
+				}
+			: undefined
+
 		await runSync({
 			include: values.include ?? [],
 			exclude: values.exclude ?? [],
 			clean: Boolean(values.clean),
 			hard: Boolean(values.hard),
-			generateLlms: values['no-llms'] ? false : true,
+			generateLlms: !values['no-llms'],
 			dryRun: Boolean(values['dry-run']),
+			llms: progressEnabled ? { onValidateProgress } : undefined,
+			typedoc: {
+				autoInstallDeps: values['typedoc-auto-install'] !== false, // default true unless explicitly false
+				packageManager: values['typedoc-pm'] as 'npm' | 'pnpm' | 'yarn' | undefined,
+			},
 		})
 
+		if (wroteProgress) process.stdout.write('\n')
 		console.log('Done.')
 	}
 	catch (err) {

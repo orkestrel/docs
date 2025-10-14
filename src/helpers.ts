@@ -2,7 +2,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import crypto from 'node:crypto'
-import type { CacheFile } from './types'
+import type { CacheFile } from './types.js'
 
 /**
  * Check whether a path exists.
@@ -134,8 +134,8 @@ function shouldSkipForApi(absPath: string): boolean {
 	if (rel.includes(`${path.sep}node_modules${path.sep}`)) return true
 	if (rel.includes(`${path.sep}dist${path.sep}`)) return true
 	if (rel.includes(`${path.sep}build${path.sep}`)) return true
-	if (rel.endsWith('.test.ts') || rel.endsWith('.spec.ts')) return true
-	return false
+	return rel.endsWith('.test.ts') || rel.endsWith('.spec.ts');
+
 }
 
 /**

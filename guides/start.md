@@ -2,7 +2,7 @@
 
 Install
 ```sh
-pnpm add -D @orkestrel/docs
+npm add -D @orkestrel/docs
 ```
 
 Prerequisites
@@ -13,10 +13,10 @@ Prerequisites
 Quick run
 ```sh
 # From orkestrel/docs
-pnpm install
-pnpm build
-pnpm sync          # soft run (guides + api + llms)
-pnpm sync:hard     # add link validation
+npm install
+npm build
+npm sync          # soft run (guides + api + llms)
+npm sync:hard     # add link validation
 ```
 
 Outputs

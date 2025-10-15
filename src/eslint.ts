@@ -2,6 +2,7 @@ import type { OrkEslintOptions } from './types.js'
 import { createConfigForNuxt } from '@nuxt/eslint-config/flat'
 import jsdoc from 'eslint-plugin-jsdoc'
 import tsdoc from 'eslint-plugin-tsdoc'
+import { isRecord, isArray, hasSchema } from '@orkestrel/validator'
 
 /**
  * Orkestrel ESLint flat config helper (Nuxt + TS + TSDoc/JSDoc + project rules).
@@ -29,7 +30,7 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
 	const typesFile = opts.allowTypesFile ?? 'src/types.ts'
 
 	// Merge user Nuxt flat config options while enforcing stylistic indent override.
-	const stylisticSource = (opts.nuxt?.features?.stylistic && typeof opts.nuxt.features.stylistic === 'object')
+	const stylisticSource = isRecord(opts.nuxt?.features?.stylistic)
 		? opts.nuxt.features.stylistic
 		: {}
 	const nuxtInput: Parameters<typeof createConfigForNuxt>[0] = {
@@ -44,6 +45,11 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
 	} as const
 	const base = await createConfigForNuxt(nuxtInput)
 
+	// Safely merge user rule extensions only when provided as records
+	const extendRules = isRecord(opts.extendRules) ? opts.extendRules : {}
+	const extendJsdocRules = isRecord(opts.extendJsdocRules) ? opts.extendJsdocRules : {}
+	const extendTsdocRules = isRecord(opts.extendTsdocRules) ? opts.extendTsdocRules : {}
+
 	const orkTs = {
 		name: 'orkestrel/typescript',
 		rules: {
@@ -52,7 +58,7 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
 			'@typescript-eslint/no-non-null-assertion': 'error',
 			'@typescript-eslint/ban-ts-comment': ['error', { 'ts-ignore': true, 'ts-expect-error': 'allow-with-description' }],
 			// User rule extensions
-			...(opts.extendRules ?? {}),
+			...extendRules,
 		},
 	}
 
@@ -77,7 +83,10 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
 		'ExportDefaultDeclaration > ClassDeclaration > ClassBody > MethodDefinition[kind="set"][accessibility!=private][accessibility!=protected]',
 	]
 
-	const jsdocExamples = (jsdoc as unknown as { configs?: { examples?: unknown[] } }).configs?.examples ?? []
+	// Safely extract examples config from eslint-plugin-jsdoc using a schema guard
+	const jsdocExamples = hasSchema(jsdoc, { configs: { examples: isArray } })
+		? jsdoc.configs.examples
+		: ([] as unknown[])
 
 	// Base jsdoc + tsdoc rules, extended by user-provided overrides.
 	const tsdocConfig = {
@@ -101,8 +110,8 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
 			'jsdoc/require-returns-description': ['error', { contexts: [...exportedFns, ...exportedMethods, ...exportedGetters] }],
 			'jsdoc/require-example': ['error', { contexts: [...exportedFns, ...exportedMethods, ...exportedClasses] }],
 			// User rule extensions
-			...(opts.extendJsdocRules ?? {}),
-			...(opts.extendTsdocRules ?? {}),
+			...extendJsdocRules,
+			...extendTsdocRules,
 		},
 	}
 
@@ -124,6 +133,8 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
 		rules: { 'no-restricted-syntax': 'off' },
 	}
 
+	const extras = isArray(opts.additionalConfigs) ? opts.additionalConfigs : []
+
 	return [
 		{ name: 'orkestrel/ignores', ignores: ['guides/**', 'packages/**/api/**'] },
 		...base,
@@ -132,7 +143,7 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
 		tsdocConfig,
 		restrictTypesOutsideTypes,
 		allowTypesInTypesFile,
-		...(opts.additionalConfigs ?? []),
+		...extras,
 	]
 }
 

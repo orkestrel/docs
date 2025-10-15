@@ -41,7 +41,7 @@ describe('generateLlmsOutputs', () => {
 			await sandbox.ensureDir(guidesDir)
 			await sandbox.ensureFile(path.join(guidesDir, 'index.md'), '# X\n')
 			const outDir = path.join(sandbox.root, 'out-hard-override')
-			const { log } = await captureConsole(() => generateLlmsOutputs({ pkgDir, outDir, hard: true, validateLinks: false, dryRun: true }), 'real')
+			const { log } = await captureConsole(() => generateLlmsOutputs({ pkgDir, outDir, hard: true, dryRun: true, validateLinks: false, concurrency: 2, timeoutMs: 100 }), 'real')
 			expect(log).toMatch(/validateLinks/)
 		})
 	})
@@ -93,7 +93,7 @@ describe('generateLlmsOutputs', () => {
 
 	test('skips llms outputs when guides missing (no files created)', async () => {
 		await withDocsSandbox('llms-no-guides', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'llms-no-guides-pkg', { withGuides: false })
+			const pkgDir = await createPackage(sandbox, 'llms-no-guides-pkg')
 			const outDir = path.join(sandbox.root, 'out-no-guides')
 			const { log } = await captureConsole(() => generateLlmsOutputs({ pkgDir, outDir, hard: false }), 'real')
 			expect(log).toMatch(/Skipping LLMs generation|skip LLMs/i)
@@ -104,7 +104,7 @@ describe('generateLlmsOutputs', () => {
 
 	test('dry-run skips llms generation when guides missing logs skip message', async () => {
 		await withDocsSandbox('llms-no-guides-dry', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'llms-no-guides-dry-pkg', { withGuides: false })
+			const pkgDir = await createPackage(sandbox, 'llms-no-guides-dry-pkg')
 			const outDir = path.join(sandbox.root, 'out-no-guides-dry')
 			const { log } = await captureConsole(() => generateLlmsOutputs({ pkgDir, outDir, hard: false, dryRun: true }), 'real')
 			expect(log).toMatch(/skip LLMs/i)

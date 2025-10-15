@@ -134,8 +134,7 @@ function shouldSkipForApi(absPath: string): boolean {
 	if (rel.includes(`${path.sep}node_modules${path.sep}`)) return true
 	if (rel.includes(`${path.sep}dist${path.sep}`)) return true
 	if (rel.includes(`${path.sep}build${path.sep}`)) return true
-	return rel.endsWith('.test.ts') || rel.endsWith('.spec.ts');
-
+	return rel.endsWith('.test.ts') || rel.endsWith('.spec.ts')
 }
 
 /**

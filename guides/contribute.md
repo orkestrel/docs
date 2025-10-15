@@ -13,7 +13,7 @@ Quick workflow (how to work)
 3) Run locally:
    - `npm run check` — typecheck everything
    - `npm test` — run unit tests with Vitest
-   - `npm run build` — build CJS and types
+   - `npm run build` — build ESM and `.d.ts`
    - `npm run format` — ESLint autofix
 
 Typing ethos (strict, helpful, honest)
@@ -26,6 +26,7 @@ Typing ethos (strict, helpful, honest)
 - When adding options to a function, create a named `...Options` interface in `src/types.ts` and import it
 
 TSDoc policy (what to document)
+- ESLint enforces TSDoc syntax and requires description, `@param`, `@returns`, and `@example` on exported APIs. Use fenced `ts` examples.
 - Public exported classes and their public methods: full TSDoc
     - Include: description, `@param` and `@returns` with descriptions, an `@example`, and `@remarks` if helpful
     - Examples must use fenced code blocks with the `ts` language tag (```ts)

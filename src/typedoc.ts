@@ -6,7 +6,7 @@ import type { GenerateApiOptions } from './types.js'
 
 function hasDeclaredDeps(pkgDir: string): boolean {
 	try {
-		const pkg = JSON.parse(fs.readFileSync(path.join(pkgDir, 'package.json'), 'utf8')) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> }
+		const pkg = JSON.parse(fs.readFileSync(path.join(pkgDir, 'package.json'), 'utf8')) as { dependencies?: Record<string, string>, devDependencies?: Record<string, string> }
 		const deps = Object.keys(pkg.dependencies ?? {})
 		const dev = Object.keys(pkg.devDependencies ?? {})
 		return deps.length + dev.length > 0

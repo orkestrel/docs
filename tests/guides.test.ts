@@ -6,7 +6,7 @@ import { withDocsSandbox, captureConsole, createPackage } from './setup'
 describe('copyGuides', () => {
 	test('copies guides directory content', async () => {
 		await withDocsSandbox('guides-copy', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'guides-copy-pkg', { withGuides: true })
+			const pkgDir = await createPackage(sandbox, 'guides-copy-pkg')
 			await sandbox.ensureFile(path.join(pkgDir, 'guides', 'index.md'), '# Guides\nContent\n')
 			const targetOut = path.join(sandbox.root, 'guides-out')
 			await copyGuides({ pkgDir, guidesRel: 'guides', outDir: targetOut })
@@ -17,7 +17,7 @@ describe('copyGuides', () => {
 
 	test('dry-run logs action without copying', async () => {
 		await withDocsSandbox('guides-dry', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'guides-dry-pkg', { withGuides: true })
+			const pkgDir = await createPackage(sandbox, 'guides-dry-pkg')
 			await sandbox.ensureFile(path.join(pkgDir, 'guides', 'index.md'), '# DRY\n')
 			const targetOut = path.join(sandbox.root, 'guides-out')
 			const { log } = await captureConsole(() => copyGuides({ pkgDir, guidesRel: 'guides', outDir: targetOut, dryRun: true }), 'real')
@@ -29,7 +29,7 @@ describe('copyGuides', () => {
 
 	test('skips when guides folder missing', async () => {
 		await withDocsSandbox('guides-missing', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'guides-missing-pkg', { withGuides: false })
+			const pkgDir = await createPackage(sandbox, 'guides-missing-pkg')
 			const { log } = await captureConsole(() => copyGuides({ pkgDir, guidesRel: 'guides', outDir: path.join(sandbox.root, 'guides-out') }), 'real')
 			expect(log).toMatch(/No guides/)
 		})
@@ -37,7 +37,7 @@ describe('copyGuides', () => {
 
 	test('empty guides folder copies and produces empty outDir', async () => {
 		await withDocsSandbox('guides-empty', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'guides-empty-pkg', { withGuides: false })
+			const pkgDir = await createPackage(sandbox, 'guides-empty-pkg')
 			await sandbox.ensureDir(path.join(pkgDir, 'guides')) // create empty guides
 			const targetOut = path.join(sandbox.root, 'guides-out')
 			await copyGuides({ pkgDir, guidesRel: 'guides', outDir: targetOut })
@@ -48,7 +48,7 @@ describe('copyGuides', () => {
 
 	test('overwrites existing destination content', async () => {
 		await withDocsSandbox('guides-overwrite', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'guides-overwrite-pkg', { withGuides: true })
+			const pkgDir = await createPackage(sandbox, 'guides-overwrite-pkg')
 			await sandbox.ensureFile(path.join(pkgDir, 'guides', 'new.md'), 'NEW\n')
 			const targetOut = path.join(sandbox.root, 'guides-out')
 			await sandbox.ensureDir(targetOut)

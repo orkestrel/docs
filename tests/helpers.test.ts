@@ -18,7 +18,7 @@ describe('helpers', () => {
 	test('computeGuidesHash and computeApiHash change with content mutations', async () => {
 		await withDocsSandbox('helpers-hash', async (sandbox) => {
 			const name = `hash-${process.pid}`
-			const pkgDir = await createPackage(sandbox, name, { withGuides: true, srcContent: 'export const a = 1\n' })
+			const pkgDir = await createPackage(sandbox, name)
 			const guidesDir = path.join(pkgDir, 'guides')
 			await sandbox.ensureFile(path.join(guidesDir, 'a.md'), '# A\n')
 			const typedocBase = path.join(pkgDir, 'typedoc.base.json')
@@ -36,7 +36,7 @@ describe('helpers', () => {
 
 	test('fileExists returns true for existing file and false for missing', async () => {
 		await withDocsSandbox('helpers-exists', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'exists-' + process.pid, { withGuides: false })
+			const pkgDir = await createPackage(sandbox, 'exists-' + process.pid)
 			const target = path.join(pkgDir, 'x.txt')
 			await sandbox.ensureFile(target, 'x')
 			expect(await fileExists(target)).toBe(true)
@@ -47,7 +47,7 @@ describe('helpers', () => {
 
 	test('walkDir produces deterministic listing for manually sorted comparison', async () => {
 		await withDocsSandbox('helpers-walk', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'walk-' + process.pid, { withGuides: false })
+			const pkgDir = await createPackage(sandbox, 'walk-' + process.pid)
 			await sandbox.ensureFile(path.join(pkgDir, 'src', 'b.ts'), 'export const b = 1\n')
 			await sandbox.ensureFile(path.join(pkgDir, 'src', 'a.ts'), 'export const a = 1\n')
 			const all = await walkDir(path.join(pkgDir, 'src'))
@@ -64,7 +64,7 @@ describe('helpers', () => {
 
 	test('matchesFilter includes and excludes based on patterns', async () => {
 		await withDocsSandbox('helpers-match', async (sandbox) => {
-			const dir = path.join(sandbox.orkRoot, 'core')
+			const dir = path.join(sandbox.root, 'core')
 			expect(matchesFilter('core', dir, [], true)).toBe(true)
 			expect(matchesFilter('core', dir, ['core'], true)).toBe(true)
 			expect(matchesFilter('core', dir, ['validator'], true)).toBe(false)
@@ -73,7 +73,7 @@ describe('helpers', () => {
 
 	test('loadCache returns default structure for missing or invalid file', async () => {
 		await withDocsSandbox('helpers-cache-missing', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'cache-' + process.pid, { withGuides: false })
+			const pkgDir = await createPackage(sandbox, 'cache-' + process.pid)
 			const cachePath = path.join(pkgDir, 'cache.json')
 			const cache = await loadCache(cachePath)
 			expect(cache.version).toBe(1)
@@ -86,7 +86,7 @@ describe('helpers', () => {
 
 	test('saveCache writes file readable by loadCache', async () => {
 		await withDocsSandbox('helpers-cache-save', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'cache-save-' + process.pid, { withGuides: false })
+			const pkgDir = await createPackage(sandbox, 'cache-save-' + process.pid)
 			const cachePath = path.join(pkgDir, 'cache.json')
 			await saveCache(cachePath, { version: 1, packages: { x: { guidesHash: 'a', apiHash: 'b' } } })
 			const loaded = await loadCache(cachePath)
@@ -110,7 +110,7 @@ describe('helpers', () => {
 
 	test('computeGuidesHash returns stable digest when guides missing', async () => {
 		await withDocsSandbox('helpers-no-guides', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'no-guides-' + process.pid, { withGuides: false, srcContent: 'export const a=1\n' })
+			const pkgDir = await createPackage(sandbox, 'no-guides-' + process.pid)
 			const h1 = await computeGuidesHash(pkgDir)
 			const h2 = await computeGuidesHash(pkgDir)
 			expect(h1).toBe(h2)
@@ -119,7 +119,7 @@ describe('helpers', () => {
 
 	test('computeApiHash returns stable digest when src + typedoc base missing', async () => {
 		await withDocsSandbox('helpers-no-src', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'no-src-' + process.pid, { srcContent: '' })
+			const pkgDir = await createPackage(sandbox, 'no-src-' + process.pid)
 			await sandbox.remove(path.join(pkgDir, 'src'), { recursive: true, force: true })
 			const a1 = await computeApiHash(pkgDir, path.join(pkgDir, 'typedoc.base.json'))
 			const a2 = await computeApiHash(pkgDir, path.join(pkgDir, 'typedoc.base.json'))
@@ -129,7 +129,7 @@ describe('helpers', () => {
 
 	test('api hash changes when typedoc base file content changes', async () => {
 		await withDocsSandbox('helpers-typedoc-change', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'td-change-' + process.pid, { withGuides: false, srcContent: 'export const z=1\n' })
+			const pkgDir = await createPackage(sandbox, 'td-change-' + process.pid)
 			const base = path.join(pkgDir, 'typedoc.base.json')
 			await sandbox.ensureFile(base, '{"entryPoints":[]}')
 			const h1 = await computeApiHash(pkgDir, base)
@@ -141,7 +141,7 @@ describe('helpers', () => {
 
 	test('getPackageMeta returns null for missing or invalid package.json and parses valid', async () => {
 		await withDocsSandbox('helpers-meta', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'meta-' + process.pid, { withGuides: false })
+			const pkgDir = await createPackage(sandbox, 'meta-' + process.pid)
 			await sandbox.remove(path.join(pkgDir, 'package.json'), { force: true })
 			const missing = await getPackageMeta(pkgDir)
 			expect(missing).toBeNull()
@@ -156,7 +156,7 @@ describe('helpers', () => {
 
 	test('computeApiHash ignores test and dist files', async () => {
 		await withDocsSandbox('helpers-api-ignore', async (sandbox) => {
-			const pkgDir = await createPackage(sandbox, 'api-ignore-' + process.pid, { withGuides: false })
+			const pkgDir = await createPackage(sandbox, 'api-ignore-' + process.pid)
 			const srcDir = path.join(pkgDir, 'src')
 			await sandbox.ensureFile(path.join(srcDir, 'index.ts'), 'export const main=1\n')
 			await sandbox.ensureFile(path.join(srcDir, 'ignored.test.ts'), 'export const testOnly=1\n')

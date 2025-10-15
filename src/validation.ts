@@ -1,9 +1,16 @@
-import { isBoolean, isString, isNumber } from '@orkestrel/validator'
+import {
+	isBoolean,
+	isString,
+	isNumber,
+	isRecord,
+	arrayOf,
+	objectOf,
+	hasPartialSchema,
+	literalOf,
+	unionOf,
+	assertWithGuard,
+} from '@orkestrel/validator'
 import type { SyncOptions, LlmsOptions, OrkEslintOptions, GenerateApiOptions } from './types.js'
-
-function isRecord(x: unknown): x is Record<string, unknown> {
-	return typeof x === 'object' && x !== null && !Array.isArray(x)
-}
 
 /**
  * Shallow runtime validation for a potential `SyncOptions` value.
@@ -21,16 +28,17 @@ function isRecord(x: unknown): x is Record<string, unknown> {
  * ```
  */
 export function isSyncOptions(x: unknown): x is SyncOptions {
-	if (!isRecord(x)) return false
-	if (!Array.isArray(x.include) || !x.include.every(isString)) return false
-	if (!Array.isArray(x.exclude) || !x.exclude.every(isString)) return false
-	if (!isBoolean(x.clean)) return false
-	if (!isBoolean(x.hard)) return false
-	if (!isBoolean(x.generateLlms)) return false
-	if (!isBoolean(x.dryRun)) return false
-	if (x.llms && !isRecord(x.llms)) return false
-	return !(x.typedoc && !isRecord(x.typedoc));
-
+	const guard = objectOf({
+		include: arrayOf(isString),
+		exclude: arrayOf(isString),
+		clean: isBoolean,
+		hard: isBoolean,
+		generateLlms: isBoolean,
+		dryRun: isBoolean,
+		llms: isRecord,
+		typedoc: isRecord,
+	}, { optional: ['llms', 'typedoc'] as const })
+	return guard(x)
 }
 
 /**
@@ -46,13 +54,14 @@ export function isSyncOptions(x: unknown): x is SyncOptions {
  * ```
  */
 export function isLlmsOptions(x: unknown): x is LlmsOptions {
-	if (!isRecord(x)) return false
-	if (!isString(x.pkgDir)) return false
-	if (!isString(x.outDir)) return false
-	if (x.hard !== undefined && !isBoolean(x.hard)) return false
-	if (x.concurrency !== undefined && !isNumber(x.concurrency)) return false
-	return !(x.timeoutMs !== undefined && !isNumber(x.timeoutMs));
-
+	const guard = objectOf({
+		pkgDir: isString,
+		outDir: isString,
+		hard: isBoolean,
+		concurrency: isNumber,
+		timeoutMs: isNumber,
+	}, { optional: ['hard', 'concurrency', 'timeoutMs'] as const })
+	return guard(x)
 }
 
 /**
@@ -68,10 +77,11 @@ export function isLlmsOptions(x: unknown): x is LlmsOptions {
  * ```
  */
 export function isOrkEslintOptions(x: unknown): x is OrkEslintOptions {
-	if (!isRecord(x)) return false
-	if (x.stylisticIndent !== undefined && !(x.stylisticIndent === 'tab' || x.stylisticIndent === 2 || x.stylisticIndent === 4)) return false
-	return !(x.allowTypesFile !== undefined && !isString(x.allowTypesFile));
-
+	const stylisticIndent = unionOf(literalOf('tab'), literalOf(2, 4))
+	return hasPartialSchema(x, {
+		stylisticIndent,
+		allowTypesFile: isString,
+	})
 }
 
 /**
@@ -85,15 +95,17 @@ export function isOrkEslintOptions(x: unknown): x is OrkEslintOptions {
  * ```
  */
 export function isGenerateApiOptions(x: unknown): x is GenerateApiOptions {
-	if (!isRecord(x)) return false
-	if (!isString(x.pkgDir)) return false
-	if (!isString(x.outDir)) return false
-	if (x.baseConfigPath !== undefined && !isString(x.baseConfigPath)) return false
-	if (x.tsconfig !== undefined && !isString(x.tsconfig)) return false
-	if (x.entryPoints !== undefined && (!Array.isArray(x.entryPoints) || !x.entryPoints.every(isString))) return false
-	if (x.entryPointStrategy !== undefined && !['resolve', 'expand', 'packages'].includes(String(x.entryPointStrategy))) return false
-	return !(x.dryRun !== undefined && !isBoolean(x.dryRun));
-
+	const entryPointStrategy = literalOf('resolve', 'expand', 'packages')
+	const guard = objectOf({
+		pkgDir: isString,
+		outDir: isString,
+		baseConfigPath: isString,
+		tsconfig: isString,
+		entryPoints: arrayOf(isString),
+		entryPointStrategy,
+		dryRun: isBoolean,
+	}, { optional: ['baseConfigPath', 'tsconfig', 'entryPoints', 'entryPointStrategy', 'dryRun'] as const })
+	return guard(x)
 }
 
 /**
@@ -107,7 +119,7 @@ export function isGenerateApiOptions(x: unknown): x is GenerateApiOptions {
  * ```
  */
 export function assertSyncOptions(x: unknown): asserts x is SyncOptions {
-	if (!isSyncOptions(x)) throw new TypeError('Invalid SyncOptions')
+	assertWithGuard(x, isSyncOptions)
 }
 
 /**
@@ -121,7 +133,7 @@ export function assertSyncOptions(x: unknown): asserts x is SyncOptions {
  * ```
  */
 export function assertLlmsOptions(x: unknown): asserts x is LlmsOptions {
-	if (!isLlmsOptions(x)) throw new TypeError('Invalid LlmsOptions')
+	assertWithGuard(x, isLlmsOptions)
 }
 
 /**
@@ -135,7 +147,7 @@ export function assertLlmsOptions(x: unknown): asserts x is LlmsOptions {
  * ```
  */
 export function assertGenerateApiOptions(x: unknown): asserts x is GenerateApiOptions {
-	if (!isGenerateApiOptions(x)) throw new TypeError('Invalid GenerateApiOptions')
+	assertWithGuard(x, isGenerateApiOptions)
 }
 
 /**
@@ -149,5 +161,5 @@ export function assertGenerateApiOptions(x: unknown): asserts x is GenerateApiOp
  * ```
  */
 export function assertOrkEslintOptions(x: unknown): asserts x is OrkEslintOptions {
-	if (!isOrkEslintOptions(x)) throw new TypeError('Invalid OrkEslintOptions')
+	assertWithGuard(x, isOrkEslintOptions)
 }

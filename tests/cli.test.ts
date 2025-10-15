@@ -7,8 +7,12 @@ function runCli(args: readonly string[], opts: { cwd?: string } = {}) {
 		const child = spawn('node', [path.join(process.cwd(), 'dist', 'cli.js'), ...args], { cwd: opts.cwd ?? process.cwd(), shell: true })
 		let stdout = ''
 		let stderr = ''
-		child.stdout.on('data', (d) => { stdout += d.toString() })
-		child.stderr.on('data', (d) => { stderr += d.toString() })
+		child.stdout.on('data', (d) => {
+			stdout += d.toString()
+		})
+		child.stderr.on('data', (d) => {
+			stderr += d.toString()
+		})
 		child.on('close', code => resolve({ code, stdout, stderr }))
 	})
 }

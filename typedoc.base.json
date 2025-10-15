@@ -11,7 +11,6 @@
   "entryPoints": [
     "src/index.ts"
   ],
-  "out": "docs/api",
   "plugin": [
     "typedoc-plugin-markdown",
     "typedoc-plugin-frontmatter",
@@ -24,7 +23,6 @@
   "excludeExternals": false,
   "includeVersion": false,
   "categorizeByGroup": true,
-  "theme": "default",
   "readme": "none",
   "gitRevision": "main"
 }

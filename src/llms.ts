@@ -1,5 +1,6 @@
 import path from 'node:path'
-import { normalizeLlmsOutputs, fileExists } from './helpers.js'
+import fs from 'node:fs'
+import { fileExists, normalizeLlmsOutputs, walkDir } from './helpers.js'
 import { generateAll } from '@orkestrel/llms-txt'
 import type { LlmsOptions } from './types.js'
 
@@ -25,22 +26,35 @@ import type { LlmsOptions } from './types.js'
  * ```
  */
 export async function generateLlmsOutputs(opts: LlmsOptions): Promise<void> {
-	const { pkgDir, hard, dryRun, ...passThrough } = opts
-	const { outDir } = passThrough
-	const guidesDir = path.join(pkgDir, 'guides')
+	const { pkgDir, hard, dryRun, outDir, ...passThrough } = opts
+	// Prefer using the per-package outDir as docs root when it already contains API markdown (or any .md files),
+	// so that llms outputs aggregate both API and guides. Otherwise, fallback to the in-repo guides directory.
+	let docsRoot = path.join(pkgDir, 'guides')
+	const apiDir = path.join(outDir, 'api')
+	if (fs.existsSync(apiDir)) {
+		try {
+			const files = await walkDir(apiDir)
+			if (files.some(f => f.toLowerCase().endsWith('.md'))) {
+				docsRoot = outDir
+			}
+		}
+		catch {
+			// Ignore traversal errors; fallback remains guidesDir
+		}
+	}
 
-	if (!(await fileExists(guidesDir))) {
+	if (!(await fileExists(docsRoot))) {
 		if (dryRun) {
-			console.log(`[dry-run] skip LLMs (no guides at ${guidesDir})`)
+			console.log(`[dry-run] skip LLMs (no docs at ${docsRoot})`)
 			return
 		}
-		console.log(`Skipping LLMs generation (no guides directory at ${guidesDir}).`)
+		console.log(`Skipping LLMs generation (no docs directory at ${docsRoot}).`)
 		return
 	}
 
 	if (dryRun) {
 		const parts: string[] = [
-			`[dry-run] @orkestrel/llms-txt root=${pkgDir}`,
+			`[dry-run] @orkestrel/llms-txt root=${docsRoot}`,
 			`out=${outDir}`,
 		]
 		if (hard || passThrough.validateLinks) parts.push('validateLinks')
@@ -52,10 +66,16 @@ export async function generateLlmsOutputs(opts: LlmsOptions): Promise<void> {
 
 	await generateAll({
 		...passThrough,
-		docsDir: guidesDir,
+		docsDir: docsRoot,
+		outDir,
 		validateLinks: hard ? true : passThrough.validateLinks,
 	})
 
-	await normalizeLlmsOutputs(outDir, ['llms.txt', 'llms-full.txt'])
+	// Normalize outputs to the outDir root, honoring custom filenames when provided
+	const outputNames = [
+		passThrough.outputFileLlm ?? 'llms.txt',
+		passThrough.outputFileFull ?? 'llms-full.txt',
+	]
+	await normalizeLlmsOutputs(outDir, outputNames)
 	console.log(`Generated LLMs text outputs in ${outDir}`)
 }

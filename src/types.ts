@@ -48,10 +48,12 @@ export interface CacheFile {
 }
 
 /**
- * Options for generating LLM text outputs (extends \@orkestrel/llms-txt GenerateConfig sans docsDir).
+ * Options for generating LLM text outputs (extends \@orkestrel/llms-txt GenerateConfig sans docsDir and with required outDir).
  */
-export interface LlmsOptions extends Omit<GenerateConfig, 'docsDir'> {
+export interface LlmsOptions extends Omit<GenerateConfig, 'docsDir' | 'outDir'> {
 	readonly pkgDir: string
+	/** Destination directory where llms outputs should be written. */
+	readonly outDir: string
 	/** When true, forces link validation (overrides validateLinks). */
 	readonly hard?: boolean
 	readonly onValidateProgress?: (e: ValidateProgress) => void // optional external progress hook

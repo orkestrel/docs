@@ -105,22 +105,30 @@ export async function generateApiDocs(opts: GenerateApiOptions): Promise<void> {
 	// Normalize entry point paths to POSIX for TypeDoc (avoids backslash glob issues on Windows)
 	const entryPointsPosix = entryPoints.length ? entryPoints.map(p => p.split(path.sep).join('/')) : []
 
-	const bootstrapOpts: Parameters<typeof Application.bootstrap>[0] = {
+	const bootstrapOpts: Parameters<typeof Application.bootstrapWithPlugins>[0] = {
 		...(baseConfigPath ? { options: baseConfigPath as unknown as string } : {}),
 		tsconfig,
 		entryPoints: entryPointsPosix.length ? [...entryPointsPosix] : undefined,
 		entryPointStrategy,
+		// Ensure markdown plugin is loaded even without a local typedoc.base.json
+		plugin: ['typedoc-plugin-markdown', 'typedoc-plugin-frontmatter', 'typedoc-plugin-extras'],
 		...extraApplicationOptions,
 	}
 
-	// Run TypeDoc with cwd set to the package directory to avoid picking up unrelated tsconfig from docs root.
+	// Bootstrap WITH plugins so typedoc-plugin-markdown is loaded.
+	const app = await Application.bootstrapWithPlugins(bootstrapOpts)
+
+	// Disable HTML output explicitly and configure markdown output dir.
+	app.options.setValue('html', false)
+	app.options.setValue('markdown', outDir)
+
+	// Convert and emit with cwd set to the package directory so relative paths resolve as expected.
 	const origCwd = process.cwd()
 	process.chdir(pkgDir)
 	try {
-		const app = await Application.bootstrap(bootstrapOpts)
 		const project = await app.convert()
 		if (!project) throw new Error(`TypeDoc conversion failed for ${pkgDir}`)
-		await app.generateDocs(project, outDir)
+		await app.generateOutputs(project)
 	}
 	finally {
 		process.chdir(origCwd)

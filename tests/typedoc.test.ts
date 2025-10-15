@@ -1,7 +1,7 @@
 import path from 'node:path'
-import { describe, test, expect } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import { generateApiDocs } from '@orkestrel/docs'
-import { withDocsSandbox, captureConsole, createPackage } from './setup'
+import { captureConsole, createPackage, withDocsSandbox } from './setup'
 
 describe('generateApiDocs', () => {
 	test('dry-run passes through explicit entryPoints and strategy', async () => {
@@ -59,10 +59,15 @@ describe('generateApiDocs', () => {
 			const entries = await sandbox.readDir(path.relative(sandbox.root, outDir))
 			const hasDoc = entries.some(e => e.endsWith('.md') || e.endsWith('.html'))
 			expect(hasDoc).toBe(true)
-			const indexFile = entries.includes('index.md') ? 'index.md' : (entries.includes('index.html') ? 'index.html' : null)
-			expect(indexFile).not.toBeNull()
-			if (indexFile === null) throw new Error('No index file generated')
-			const indexContent = await sandbox.readFile(path.join(outDir, indexFile))
+			let chosen: string | null
+			if (entries.includes('index.md')) chosen = 'index.md'
+			else if (entries.includes('index.html')) chosen = 'index.html'
+			else {
+				chosen = entries.find(e => e.endsWith('.md') || e.endsWith('.html')) ?? null
+			}
+			expect(chosen).not.toBeNull()
+			if (chosen === null) throw new Error('No doc file generated')
+			const indexContent = await sandbox.readFile(path.join(outDir, chosen))
 			expect(indexContent).toMatch(/alpha|val/)
 		})
 	})

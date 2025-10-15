@@ -57,4 +57,12 @@ describe('eslint config helper', () => {
 		const cfg = await createOrkestrelConfig({ stylisticIndent: 4 })
 		expect(Array.isArray(cfg)).toBe(true)
 	})
+
+	test('ignores include guides and packages', async () => {
+		const cfg = await createOrkestrelConfig()
+		const block = (cfg as readonly unknown[]).find((x): x is { name: string, ignores?: readonly string[] } => isRecord(x) && x.name === 'orkestrel/ignores')
+		expect(block).toBeTruthy()
+		expect(block?.ignores?.includes('guides/**')).toBe(true)
+		expect(block?.ignores?.includes('packages/**')).toBe(true)
+	})
 })

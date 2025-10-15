@@ -102,7 +102,7 @@ const allowTypesInTypesFile = {
 
 export default [
 	// Ignore generated artifacts
-	{ name: 'orkestrel/ignores', ignores: ['guides/**', 'packages/**/api/**', 'tests/**/*.js', 'tests/**/*.d.ts'] },
+	{ name: 'orkestrel/ignores', ignores: ['guides/**', 'packages/**'] },
 	...base,
 	orkTs,
 	...jsdoc.configs.examples,

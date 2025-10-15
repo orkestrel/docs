@@ -9,7 +9,7 @@ import { isRecord, isArray, hasSchema } from '@orkestrel/validator'
  *
  * @example
  * ```ts
- * import { createOrkestrelConfig } from '\@orkestrel/docs/eslint'
+ * import { createOrkestrelConfig } from '@orkestrel/docs/eslint'
  * export default await createOrkestrelConfig({ stylisticIndent: 'tab', allowTypesFile: 'src/types.ts' })
  * ```
  */
@@ -136,7 +136,7 @@ export async function createOrkestrelConfig(opts: OrkEslintOptions = {}): Promis
 	const extras = isArray(opts.additionalConfigs) ? opts.additionalConfigs : []
 
 	return [
-		{ name: 'orkestrel/ignores', ignores: ['guides/**', 'packages/**/api/**'] },
+		{ name: 'orkestrel/ignores', ignores: ['guides/**', 'packages/**'] },
 		...base,
 		orkTs,
 		...jsdocExamples,
